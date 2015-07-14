@@ -104,7 +104,7 @@ For this you have to add this variables `updateExtra`, `affectedElement`, `conte
 	"content" : "<h1>Updated</h1>"		// New Content in HTML Format
  }
 ```
-By using this the 'content' html will be replaced in '.selector' element.
+By using this the `'content'` html will be replaced in `'.selector'` element.
 
 ### Contact
 You can tweet me at [@tarunmangukiya](https://twitter.com/TarunMangukiya) for additional information.
