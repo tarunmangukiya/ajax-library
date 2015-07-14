@@ -66,7 +66,7 @@ function log() {
  *	{
 		"status" : "success",				// Status must be 'success'
 		"updateExtra" : true,				// Shows that we need to update a part of web page
-		"affectedElement" = ".selector",	// CSS Selector of the element to be updated
+		"affectedElement" : ".selector",	// CSS Selector of the element to be updated
 		"content" : "<h1>Updated</h1>"		// New Content in HTML Format
  	}
  * By using this the 'content' html will be replaced in '.selector' element.

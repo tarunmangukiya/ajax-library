@@ -27,7 +27,7 @@ $(function(){
 ```
 ###Options - Client Side
 Here the options may have the following options:
-```json
+```javascript
 options = {
 	validatorType: 'null|jQueryValidation|BootstrapValidator',
 	action: '/',
@@ -96,11 +96,11 @@ Sometimes we need to redirect the page on successful submit. Thus we can define 
 #####Update the Elements of a page
 Sometimes in case of success, you can update the parts of the page rather than refreshing the whole page (most of us use this only).
 For this you have to add this variables `updateExtra`, `affectedElement`, `content` in response.
-```json
+```javascript
 {
 	"status" : "success",				// Status must be 'success'
 	"updateExtra" : true,				// Shows that we need to update a part of web page
-	"affectedElement" = ".selector",	// CSS Selector of the element to be updated
+	"affectedElement" : ".selector",	// CSS Selector of the element to be updated
 	"content" : "<h1>Updated</h1>"		//  New Content in HTML Format
  }
 ```
