@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Form Example - jQuery Ajax Library</title>
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="../jquery.ajaxlibs.js"></script>
+</head>
+<body>
+<h1>Form Example - jQuery Ajax Library</h1>
+<form id="frmAjax" action="../server-side/post.php" method="POST">
+	<label>
+		First Name :
+		<input type="text" name="fname" placeholder="First Name"/>
+	</label>
+	<label>
+		Last Name :
+		<input type="text" name="lname" placeholder="Last Name"/>
+	</label>
+	<label>
+		Email Name :
+		<input type="email" name="email" placeholder="Email Address"/>
+	</label>
+	<input type="submit" value="Submit"/>
+</form>
+<script type="text/javascript">
+$(function () {
+	$('#frmAjax').ajaxForm({
+		success:function(){
+			alert("Done");
+		}
+	});
+});
+</script>
+</body>
+</html>
