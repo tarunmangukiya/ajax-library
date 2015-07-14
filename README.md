@@ -57,7 +57,7 @@ type of request `[GET|POST]`
 #####message/error :
 **pre** : Pre HTML that will be prepended before the message/error text `<div class="alert alert-info" role="alert">`
 
-**post** : Pre HTML that will be prepended before the message/error text `</div>`
+**post** : Post HTML that will be prepended before the message/error text `</div>`
 #####onSuccess :
 Define the function that will be called on successful submission of form (Server Side: `"status":"success"`).
 #####onError :
