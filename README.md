@@ -86,11 +86,11 @@ Or, you can manually provide the response in json format.
 
 #####Redirect Page to another page on success
 Sometimes we need to redirect the page on successful submit. Thus we can define `redirect` variable in response. Thus the page will be redirected to the specified url (or refreshed in case of blank url).
-```json
+```javascript
  {
-	"status" : "success|error", 				(required) - shows the form is submitted successfully
-	"redirect" : "http://mysite.com/page2/", 	(optional) - in case of success, the page is redirected to this url
-	"message" : "Form Submitted, or has Error"	(optional) - Shows the custom message/error on top of the form
+	"status" : "success|error", 				// (required) - shows the form is submitted successfully
+	"redirect" : "http://mysite.com/page2/", 	// (optional) - in case of success, the page is redirected to this url
+	"message" : "Form Submitted, or has Error"	// (optional) - Shows the custom message/error on top of the form
  }
 ```
 #####Update the Elements of a page
@@ -101,7 +101,7 @@ For this you have to add this variables `updateExtra`, `affectedElement`, `conte
 	"status" : "success",				// Status must be 'success'
 	"updateExtra" : true,				// Shows that we need to update a part of web page
 	"affectedElement" : ".selector",	// CSS Selector of the element to be updated
-	"content" : "<h1>Updated</h1>"		//  New Content in HTML Format
+	"content" : "<h1>Updated</h1>"		// New Content in HTML Format
  }
 ```
 By using this the 'content' html will be replaced in '.selector' element.
