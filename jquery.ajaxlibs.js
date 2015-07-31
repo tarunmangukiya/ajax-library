@@ -128,19 +128,19 @@ function log() {
 	$.extend($.ajaxForm.prototype, {
 		init: function () {
 			//Check the validator type and bind the respected submit event
-			log("Binded");				
 			this.action = (typeof this.formSubmitting.attr("action") === "undefined")?$.ajaxForm.defaults.action:this.formSubmitting.attr("action");
 			this.type = (typeof this.formSubmitting.attr("method") === "undefined")?$.ajaxForm.defaults.type:this.formSubmitting.attr("method");
 
-			if(this.validatorType == "BootstrapValidator"){
+			if(this.settings.validatorType == "BootstrapValidator"){
 				this.formSubmitting.on("success.form.bv", this, this.submit);
 			}
 			else{
 				this.formSubmitting.on("submit", this, this.submit);
 			}
+			log("Binded", this);				
 		},
 		showElementErrors: function(ele){
-			if(this.validatorType == "BootstrapValidator"){
+			if(this.settings.validatorType == "BootstrapValidator"){
 				for (var i = 0; i < ele.length; i++) {
 					var err = $(this.formSubmitting.find('[data-bv-for="' + ele[i].name + '"]')[0]);
 					var erricon = this.formSubmitting.find('[data-bv-icon-for="' + ele[i].name + '"]');
@@ -151,8 +151,8 @@ function log() {
 					}
 				}
 			}
-			else if(this.validatorType == "jQueryValidation"){
-				var validator = $(this.formSubmitting.selector).validate();
+			else if(this.settings.validatorType == "jQueryValidation"){
+				var validator = $(this.formSubmitting).validate();
 				validator.showErrors(ele);
 			}
 		},
@@ -187,9 +187,9 @@ function log() {
 		submit: function (e) {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
 			that = e.data;
-
 			//Check if the validation is valid for jQuery Validator
-			if(that.validatorType == "jQueryValidation"){
+			if(that.settings.validatorType == "jQueryValidation"){
+				log("Checking jQueryValidation");
 				var $frm = $(that.formSubmitting);
 				if(!$frm.valid()){
 					log("jQueryValidation Not Validated Form");
