@@ -103,7 +103,7 @@ function log() {
 
 	$.ajaxForm = function(options, form){
 		this.formSubmitting = $(form);
-		this.settings = $.extend(true, {}, this.defaults, options);
+		this.settings = $.extend(true, {}, $.ajaxForm.defaults, options);
 		this.init();
 	};
 
