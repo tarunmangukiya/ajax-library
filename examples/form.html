@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1>Form Example - jQuery Ajax Library</h1>
-<form id="frmAjax" action="../server-side/post.php" method="POST">
+<form id="frmAjax" action="../server-side/post.php" method="POST" enctype="multipart/form-data">
 	<label>
 		First Name :
 		<input type="text" name="fname" placeholder="First Name"/>
@@ -21,14 +21,41 @@
 		Email Name :
 		<input type="email" name="email" placeholder="Email Address"/>
 	</label>
+
+	<label>
+		File :
+		<input type="file" id="file" name="file[]" data-url="../server-side/ajaxfileupload.php" placeholder="Photo" multiple/>
+		<span id="fileStatus"></span>
+	</label>
 	<input type="submit" value="Submit"/>
 </form>
+<hr>
+<a id="test1" class="test" href="#" data-url="../server-side/virtualformpost.php?id=1" data-post="{&quot;testing&quot;:&quot;testung12&quot;}" data-cache="true">Press</a>
+<a id="test2" class="test" href="#" data-url="../server-side/virtualformpost.php?id=2" data-post="{&quot;testing&quot;:&quot;testung12&quot;}" data-cache="true">Press</a>
+<a id="test3" class="test" href="#" data-url="../server-side/virtualformpost.php?id=3" data-post="{&quot;testing&quot;:&quot;testung12&quot;}" data-cache="true">Press</a>
+<a id="test4" class="test" href="#" data-url="../server-side/virtualformpost.php?id=4" data-post="{&quot;testing&quot;:&quot;testung12&quot;}" data-cache="true">Press</a>
+<a id="test5" class="test" href="#" data-url="../server-side/virtualformpost.php?id=5" data-post="{&quot;testing&quot;:&quot;testung12&quot;}">Press</a>
+<hr>
 <script type="text/javascript">
 $(function () {
 	$('#frmAjax').ajaxForm({
+		onProgress: function (data) {
+			console.log(data);
+			$("#frmAjax").find('input[type=submit]').val('Uploaded' + data.loaded+'/'+data.total);
+		},
 		onSuccess:function(){
 			alert("Done :P");
 		}
+	});
+	$(".test").virtualAjaxForm({
+		type : 'post',
+		beforeSubmit: function (e) {
+			e.text('Loading...');
+		}
+	});
+
+	$("#file").change(function (e) {
+		$(this).ajaxFileUpload();
 	});
 });
 </script>
