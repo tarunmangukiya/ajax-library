@@ -95,12 +95,54 @@ function log() {
 
 			return this;
 		},
+		virtualAjaxForm: function (options) {
+			if (!this.length) {
+				if (options && options.debug && window.console) {
+					console.warn("Can't create Virtual Ajax Form." );
+				}
+				return;
+			}
+
+			this.each(function (i, e) {
+				// check if virtualAjaxForm is already applied
+				var ajaxfrm = $.data(e, "virtualAjaxForm");
+				if (ajaxfrm) {
+					return ajaxfrm;
+				}
+
+				ajaxfrm = new $.virtualAjaxForm(options, e);
+				$.data(e, "virtualAjaxForm", ajaxfrm);
+			});
+
+			return this;
+		},
+
+		ajaxFileUpload: function (options) {
+			if (!this.length) {
+				if (options && options.debug && window.console) {
+					console.warn("Can't create Ajax File Upload." );
+				}
+				return;
+			}
+
+			var ajaxfrm = $.data(this[0], "ajaxFileUpload");
+			if (ajaxfrm) {
+				ajaxfrm.submit();
+				return ajaxfrm;
+			}
+
+			ajaxfrm = new $.ajaxFileUpload(options, this[0]);
+			$.data(this[0], "ajaxFileUpload", ajaxfrm);
+			
+			return this;
+		},
 		ajaxSubmit: function (e) {
 			var frm = $.data(this[0], "ajaxForm");
 			frm.submit({data:this});
 		}
 	});
 
+	// AjaxForm Region Start
 	$.ajaxForm = function(options, form){
 		this.formSubmitting = $(form);
 		this.settings = $.extend(true, {}, $.ajaxForm.defaults, options);
@@ -212,6 +254,13 @@ function log() {
 				type:that.type,
 				data:that.data,
 				cache:false,
+				xhr: function() {  // Custom XMLHttpRequest
+		            var myXhr = $.ajaxSettings.xhr();
+		            if(myXhr.upload && that.settings.onProgress != null){ // Check if upload property exists
+		                myXhr.upload.addEventListener('progress',that.settings.onProgress, false); // For handling the progress of the upload
+		            }
+		            return myXhr;
+		        },
 				contentType: false,
 	            processData: false
 			}).done(function (data) {
@@ -282,4 +331,308 @@ function log() {
 			return false;
 		}
 	});
+
+	// End AjaxForm Region
+
+
+	// VirtualAjaxForm Region Start
+	$.virtualAjaxForm = function(options, element){
+		this.element = $(element);
+
+		// Initializing Settings for Virtual Ajax Form
+		var settings = {};
+		if (typeof this.element.data("type") !== "undefined")
+			settings.type = this.element.data("type");
+
+		if (typeof this.element.data("url") !== "undefined")
+			settings.url = this.element.data("url");
+
+		if (typeof this.element.data("cache") !== "undefined")
+			settings.cache = this.element.data("cache");
+
+
+		if (typeof this.element.data("post") !== "undefined"){
+			settings.postData = this.element.data("post");
+		}
+
+		this.settings = $.extend(true, {}, $.virtualAjaxForm.defaults, settings, options);
+		this.init();
+	};
+
+	$.extend($.virtualAjaxForm, {
+		defaults: {
+			url: '/',
+			type: 'POST',
+			cache: false,
+			postData: null,
+			completedOnce: false
+		},
+		setDefaults: function( settings ) {
+			$.extend( $.virtualAjaxForm.defaults, settings );
+		},
+		response: null
+	});
+
+	$.extend($.virtualAjaxForm.prototype, {
+		init: function () {
+			this.element.on("click", this, this.submit);
+			log("Virtual Ajax Form Binded", this);				
+		},
+		handleRedirect: function(url){
+			if(typeof url !== "undefined"){
+				if(url == ""){
+					location.reload();
+				}
+				else{
+					window.location.href = url;
+				}
+			}
+		},
+		beforeSubmit: function(){
+			if(that.settings.beforeSubmit != null) that.settings.beforeSubmit(that.element);
+		},
+		afterSubmit: function(){
+			if(that.settings.afterSubmit != null) that.settings.afterSubmit(that.element);
+		},
+		submit: function (e) {
+			if(typeof e.preventDefault !== "undefined") e.preventDefault();
+			that = e.data;
+
+			// Check if cache is allowed & the request is executed once then run the remaining part
+			if(that.settings.cache && that.settings.completedOnce) {
+				log("Virtual Ajax Form Alreay Loaded, executing from cache", that.element);
+				jsonData = that.response;
+				/* Redirects to the Page if variable is set from server side
+				 * Example : jsonData.redirect = "http://google.com"
+				 */
+				that.handleRedirect(jsonData.redirect);
+
+				/* Updates a specific part of page
+				 * Example : jsonData.updateExtra = true,
+				 *			affectedElement = ".admin-table tr.active", content = new html data
+				 */
+				if(jsonData.updateExtra){
+					$(jsonData.affectedElement).html(jsonData.content);
+				}
+
+				if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+				
+				that.afterSubmit();
+				return;
+			}
+
+			log("Submitting Virtual Ajax Form", that.element);
+
+			//Create Form Data Object
+			that.data = new FormData(that.settings.postData);
+
+			//Starting submitting the request, thus disable the submit button 
+			that.beforeSubmit();
+			//Create Ajax and submit form
+			$.ajax({
+				url:that.settings.url,
+				type:that.settings.type,
+				data:that.data,
+				cache:false,
+				xhr: function() {  // Custom XMLHttpRequest
+		            var myXhr = $.ajaxSettings.xhr();
+		            if(myXhr.upload && that.settings.onProgress != null){ // Check if upload property exists
+		                myXhr.upload.addEventListener('progress',that.settings.onProgress, false); // For handling the progress of the upload
+		            }
+		            return myXhr;
+		        },
+				contentType: false,
+	            processData: false
+			}).done(function (data) {
+				//If the server responded with data
+				jsonData = data;
+
+				if(typeof data === "string"){
+					try{
+						that.response = jsonData = JSON.parse(data);
+						that.settings.completedOnce = true;
+					}
+					catch(err){
+						/* In case of no JSON Server Data the onSuccess method will be called,
+						 * the response will be handled by the method itself
+						 */
+						log("Error in Parsing the server side data as JSON");
+						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data);
+						that.afterSubmit();
+						return false;
+					}
+				}
+			
+				if(jsonData.status == "success"){
+					/* Redirects to the Page if variable is set from server side
+					 * Example : jsonData.redirect = "http://google.com"
+					 */
+					that.handleRedirect(jsonData.redirect);
+
+					/* Updates a specific part of page
+					 * Example : jsonData.updateExtra = true,
+					 *			affectedElement = ".admin-table tr.active", content = new html data
+					 */
+					if(jsonData.updateExtra){
+						$(jsonData.affectedElement).html(jsonData.content);
+					}
+
+					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+				}
+				else if(jsonData.status == "error"){
+					if(that.settings.onError != null) that.settings.onError(jsonData);
+				}
+				that.afterSubmit();
+			}).fail(function(e) {
+				/* If Ajax Fails due to some reason,
+				 * The ResponseText or StatusText will be shown as error
+				 */
+				log("ajax fail", e);
+				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
+				that.showCustomError(message);
+
+				that.afterSubmit();
+				if(that.settings.onFail != null) that.settings.onFail(e);
+			});
+
+			return false;
+		}
+	});
+
+	// End VirtualAjaxForm Region
+
+
+	// AjaxFileUpload Region Start
+	$.ajaxFileUpload = function(options, element){
+		this.element = $(element);
+
+		// Initializing Settings for Virtual Ajax Form
+		var settings = {};
+
+		if (typeof this.element.data("url") !== "undefined")
+			settings.url = this.element.data("url");
+
+		if (typeof this.element.data("post") !== "undefined"){
+			settings.postData = this.element.data("post");
+		}
+
+		this.settings = $.extend(true, {}, $.ajaxFileUpload.defaults, settings, options);
+		this.submit();
+	};
+
+	$.extend($.ajaxFileUpload, {
+		defaults: {
+			url: '/',
+			type: 'POST',
+			postData: null
+		},
+		setDefaults: function( settings ) {
+			$.extend( $.ajaxFileUpload.defaults, settings );
+		},
+		response: null
+	});
+
+	$.extend($.ajaxFileUpload.prototype, {
+		handleRedirect: function(url){
+			if(typeof url !== "undefined"){
+				if(url == ""){
+					location.reload();
+				}
+				else{
+					window.location.href = url;
+				}
+			}
+		},
+		beforeSubmit: function(){
+			if(that.settings.beforeSubmit != null) that.settings.beforeSubmit(that.element);
+		},
+		afterSubmit: function(){
+			if(that.settings.afterSubmit != null) that.settings.afterSubmit(that.element);
+		},
+		submit: function () {
+			that = this;
+
+			log("Submitting Ajax File Upload", that.element);
+
+			//Create Form Data Object
+			that.data = new FormData(that.settings.postData);
+			// Element should not be jQuery Object
+			for (var i = that.element[0].files.length - 1; i >= 0; i--) {
+				that.data.append(that.element[0].name, that.element[0].files[i]);
+			};
+
+			//Starting submitting the request, thus disable the submit button 
+			that.beforeSubmit();
+			//Create Ajax and submit form
+			$.ajax({
+				url:that.settings.url,
+				type:that.settings.type,
+				data:that.data,
+				cache:false,
+				xhr: function() {  // Custom XMLHttpRequest
+		            var myXhr = $.ajaxSettings.xhr();
+		            if(myXhr.upload && that.settings.onProgress != null){ // Check if upload property exists
+		                myXhr.upload.addEventListener('progress',that.settings.onProgress, false); // For handling the progress of the upload
+		            }
+		            return myXhr;
+		        },
+				contentType: false,
+	            processData: false
+			}).done(function (data) {
+				//If the server responded with data
+				jsonData = data;
+
+				if(typeof data === "string"){
+					try{
+						that.response = jsonData = JSON.parse(data);
+						that.settings.completedOnce = true;
+					}
+					catch(err){
+						/* In case of no JSON Server Data the onSuccess method will be called,
+						 * the response will be handled by the method itself
+						 */
+						log("Error in Parsing the server side data as JSON");
+						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data);
+						that.afterSubmit();
+						return false;
+					}
+				}
+			
+				if(jsonData.status == "success"){
+					/* Redirects to the Page if variable is set from server side
+					 * Example : jsonData.redirect = "http://google.com"
+					 */
+					that.handleRedirect(jsonData.redirect);
+
+					/* Updates a specific part of page
+					 * Example : jsonData.updateExtra = true,
+					 *			affectedElement = ".admin-table tr.active", content = new html data
+					 */
+					if(jsonData.updateExtra){
+						$(jsonData.affectedElement).html(jsonData.content);
+					}
+
+					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+				}
+				else if(jsonData.status == "error"){
+					if(that.settings.onError != null) that.settings.onError(jsonData);
+				}
+				that.afterSubmit();
+			}).fail(function(e) {
+				/* If Ajax Fails due to some reason,
+				 * The ResponseText or StatusText will be shown as error
+				 */
+				log("ajax fail", e);
+				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
+				that.showCustomError(message);
+
+				that.afterSubmit();
+				if(that.settings.onFail != null) that.settings.onFail(e);
+			});
+
+			return false;
+		}
+	});
+
+	// End VirtualAjaxForm Region
 }(jQuery);
