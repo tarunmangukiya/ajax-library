@@ -121,8 +121,10 @@ function log() {
 				post: '</div>'
 			}
 		},
-		settings: {},
-		submitButtons: 'input[type=submit], button[type=submit]'
+		submitButtons: 'input[type=submit], button[type=submit]',
+		setDefaults: function( settings ) {
+			$.extend( $.ajaxForm.defaults, settings );
+		},
 	});
 
 	$.extend($.ajaxForm.prototype, {
@@ -187,7 +189,8 @@ function log() {
 		submit: function (e) {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
 			that = e.data;
-			//Check if the validation is valid for jQuery Validator
+			// console.log(that.settings, $.ajaxForm.defaults);
+			// Check if the validation is valid for jQuery Validator
 			if(that.settings.validatorType == "jQueryValidation"){
 				log("Checking jQueryValidation");
 				var $frm = $(that.formSubmitting);
