@@ -364,7 +364,7 @@ function log() {
 			url: '/',
 			type: 'POST',
 			cache: false,
-			postData: null,
+			postData: {},
 			completedOnce: false
 		},
 		setDefaults: function( settings ) {
@@ -423,8 +423,17 @@ function log() {
 
 			log("Submitting Virtual Ajax Form", that.element);
 
+			console.log(that.settings.postData);
 			//Create Form Data Object
-			that.data = new FormData(that.settings.postData);
+			that.data = new FormData();
+
+			// Add all the post Data that's been added using data-post attribute of element
+			var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
+			for (var i = 0; i < allDataNames.length; i++) {
+				var key = allDataNames[i];
+				var val = that.settings.postData[key];
+				that.data.append(key,val);
+			}
 
 			//Starting submitting the request, thus disable the submit button 
 			that.beforeSubmit();
@@ -524,7 +533,7 @@ function log() {
 		defaults: {
 			url: '/',
 			type: 'POST',
-			postData: null
+			postData: {}
 		},
 		setDefaults: function( settings ) {
 			$.extend( $.ajaxFileUpload.defaults, settings );
@@ -555,11 +564,20 @@ function log() {
 			log("Submitting Ajax File Upload", that.element);
 
 			//Create Form Data Object
-			that.data = new FormData(that.settings.postData);
+			that.data = new FormData();
+
 			// Element should not be jQuery Object
 			for (var i = that.element[0].files.length - 1; i >= 0; i--) {
 				that.data.append(that.element[0].name, that.element[0].files[i]);
 			};
+
+			// Add all the post Data that's been added using data-post attribute of element
+			var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
+			for (var i = 0; i < allDataNames.length; i++) {
+				var key = allDataNames[i];
+				var val = that.settings.postData[key];
+				that.data.append(key,val);
+			}
 
 			//Starting submitting the request, thus disable the submit button 
 			that.beforeSubmit();
