@@ -101,7 +101,11 @@ Here, `elements` will contain the object of each field (name attribute in html) 
 
 Example (in case of **Laravel** users using Validator):
 ```php
-return \Response::json(['status' => 'error', 'message' => $validator->errors()]);
+return \Response::json(['status' => 'error', 'elements' => $validator->errors()]);
+```
+Example (in case of **CodeIgniter** users using Validator):
+```php
+return \Response::json(['status' => 'error', 'elements' => $this->form_validation->error_array()]);
 ```
 Or, you can manually provide the response in json format.
 
