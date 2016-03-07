@@ -1,6 +1,6 @@
 <?php
 if(isset($_POST)){
-	echo '{"status": "success", "message":"Hahah"}';
+	echo '{"status": "error", "message":"Hahah"}';
 }
 
 ?>

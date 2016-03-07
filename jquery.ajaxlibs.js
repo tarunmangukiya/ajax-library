@@ -154,6 +154,7 @@ function log() {
 			validatorType: null,
 			action: '/',
 			type: 'POST',
+			loadingClass: 'ajax-loading',
 			message: {
 				pre: '<div class="alert alert-info" role="alert"><button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>',
 				post: '</div>'
@@ -161,7 +162,11 @@ function log() {
 			error : {
 				pre: '<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>',
 				post: '</div>'
-			}
+			},
+			beforeSubmit: null,
+			afterSubmit: null,
+			errorPlacement: null,
+			messagePlacement: null
 		},
 		submitButtons: 'input[type=submit], button[type=submit]',
 		setDefaults: function( settings ) {
@@ -203,13 +208,23 @@ function log() {
 		showCustomMessage: function(str){
 			if(typeof str !== "undefined"){
 				var alert = $.ajaxForm.defaults.message.pre + str.toString() + $.ajaxForm.defaults.message.post;
-				this.formSubmitting.prepend(alert);
+				if(typeof this.settings.messagePlacement !== "undefined"){
+					this.settings.messagePlacement(alert, this.formSubmitting);
+				}
+				else{
+					this.formSubmitting.prepend(alert);
+				}
 			}
 		},
 		showCustomError: function(str){
 			if(typeof str !== "undefined"){
 				var alert = $.ajaxForm.defaults.error.pre + str.toString() + $.ajaxForm.defaults.error.post;
-				this.formSubmitting.prepend(alert);
+				if(typeof this.settings.errorPlacement !== "undefined"){
+					this.settings.errorPlacement(alert, this.formSubmitting);
+				}
+				else{
+					this.formSubmitting.prepend(alert);
+				}
 			}
 		},
 		handleRedirect: function(url){
@@ -223,10 +238,22 @@ function log() {
 			}
 		},
 		beforeSubmit: function(){
+			$beforeSubmit = true;
+			if(typeof that.settings.beforeSubmit !== "undefined"){
+				$beforeSubmit = that.settings.beforeSubmit(this.formSubmitting);
+				if($beforeSubmit != false)
+					$beforeSubmit = true;
+				else
+					return false;
+			}
 			this.formSubmitting.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
+			this.formSubmitting.addClass(this.settings.loadingClass);
+			return $beforeSubmit;
 		},
-		afterSubmit: function(){
+		afterSubmit: function(data, element){
 			this.formSubmitting.find("input[type=submit], button[type=submit]").removeAttr("disabled");
+			this.formSubmitting.removeClass(this.settings.loadingClass);
+			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.formSubmitting);
 		},
 		submit: function (e) {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
@@ -246,8 +273,11 @@ function log() {
 			//Create Form Data Object
 			that.data = new FormData(that.formSubmitting[0]);
 
-			//Starting submitting the request, thus disable the submit button 
-			that.beforeSubmit();
+			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
+			$beforeSubmit = that.beforeSubmit();
+			if(!$beforeSubmit) return false;
+
+			// Allowed to call a callback
 			//Create Ajax and submit form
 			$.ajax({
 				url:that.action,
@@ -276,7 +306,7 @@ function log() {
 						 * the response will be handled by the method itself
 						 */
 						log("Error in Parsing the server side data as JSON");
-						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data);
+						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
 						that.afterSubmit();
 						return false;
 					}
@@ -301,7 +331,7 @@ function log() {
 					 */
 					that.showCustomMessage(jsonData.message);
 
-					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
 				else if(jsonData.status == "error"){
 					var ele = jsonData.elements;
@@ -313,9 +343,11 @@ function log() {
 					 */
 					that.showCustomError(jsonData.message);
 
-					if(that.settings.onError != null) that.settings.onError(jsonData);
+					if(that.settings.onError != null) that.settings.onError(jsonData, that.element);
 				}
-				that.afterSubmit();
+
+				// Complete after submitting form tasks
+				that.afterSubmit(jsonData, that.element);
 			}).fail(function(e) {
 				/* If Ajax Fails due to some reason,
 				 * The ResponseText or StatusText will be shown as error
@@ -324,9 +356,12 @@ function log() {
 				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
 				that.showCustomError(message);
 
-				that.afterSubmit();
 				if(that.settings.onFail != null) that.settings.onFail(e);
+
+				// Complete after submitting form tasks
+				that.afterSubmit(jsonData, that.element);
 			});
+			
 
 			return false;
 		}
@@ -415,7 +450,7 @@ function log() {
 					$(jsonData.affectedElement).html(jsonData.content);
 				}
 
-				if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+				if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				
 				that.afterSubmit();
 				return;
@@ -466,7 +501,7 @@ function log() {
 						 * the response will be handled by the method itself
 						 */
 						log("Error in Parsing the server side data as JSON");
-						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data);
+						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
 						that.afterSubmit();
 						return false;
 					}
@@ -486,10 +521,10 @@ function log() {
 						$(jsonData.affectedElement).html(jsonData.content);
 					}
 
-					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
 				else if(jsonData.status == "error"){
-					if(that.settings.onError != null) that.settings.onError(jsonData);
+					if(that.settings.onError != null) that.settings.onError(jsonData, that.element);
 				}
 				that.afterSubmit();
 			}).fail(function(e) {
@@ -610,7 +645,7 @@ function log() {
 						 * the response will be handled by the method itself
 						 */
 						log("Error in Parsing the server side data as JSON");
-						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data);
+						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
 						that.afterSubmit();
 						return false;
 					}
@@ -630,10 +665,10 @@ function log() {
 						$(jsonData.affectedElement).html(jsonData.content);
 					}
 
-					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData);
+					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
 				else if(jsonData.status == "error"){
-					if(that.settings.onError != null) that.settings.onError(jsonData);
+					if(that.settings.onError != null) that.settings.onError(jsonData, that.element);
 				}
 				that.afterSubmit();
 			}).fail(function(e) {
@@ -641,9 +676,6 @@ function log() {
 				 * The ResponseText or StatusText will be shown as error
 				 */
 				log("ajax fail", e);
-				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
-				that.showCustomError(message);
-
 				that.afterSubmit();
 				if(that.settings.onFail != null) that.settings.onFail(e);
 			});

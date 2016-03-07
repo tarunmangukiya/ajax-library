@@ -36,15 +36,31 @@
 <a id="test4" class="test" href="#" data-url="../server-side/virtualformpost.php?id=4" data-post="{&quot;testing&quot;:&quot;You clicked 4&quot;}" data-cache="true">Press</a>
 <a id="test5" class="test" href="#" data-url="../server-side/virtualformpost.php?id=5" data-post="{&quot;testing&quot;:&quot;You clicked 5&quot;}">Press</a>
 <hr>
+<div id="Errors">
+</div>
+<div id="Messages">
+</div>
 <script type="text/javascript">
 $(function () {
 	$('#frmAjax').ajaxForm({
+		beforeSubmit: function (element) {
+			return confirm("Do you want to submit the form?");	
+		},
 		onProgress: function (data) {
 			console.log(data);
 			$("#frmAjax").find('input[type=submit]').val('Uploaded' + data.loaded+'/'+data.total);
 		},
-		onSuccess:function(){
+		onSuccess:function(data){
 			alert("Done :P");
+		},
+		afterSubmit: function (element) {
+			console.log(arguments);
+		},
+		errorPlacement: function (error, element) {
+			$("#Errors").html(error);
+		},
+		messagePlacement: function (message, element) {
+			$("#Messages").html(message);
 		}
 	});
 	$(".test").virtualAjaxForm({
