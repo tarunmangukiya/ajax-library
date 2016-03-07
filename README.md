@@ -4,7 +4,7 @@ A light-weight jQuery Library to enhance the existing ajax tasks. It provides di
 
 Contains the following Library for advanced ajax support
   - AjaxForm
-  - AjaxFileUpload & VirtualAjaxForm are coming soon...
+  - VirtualAjaxForm (Documentation writing is pending, you can have a look at example on how to use it)
 
 ##AjaxForm
 AjaxForm modifies existing html form into a advanced AjaxHelper AjaxForm. Using AjaxForm you can not only make the form ajax but also add the advanced functionalities like displaying errors, information messages, update the parts of page in case of success, redirect between pages, etc.
@@ -32,6 +32,7 @@ options = {
 	validatorType: 'null|jQueryValidation|BootstrapValidator',
 	action: '/',
 	type: 'POST',
+	loadingClass: 'ajax-loading',
 	message: {
 		pre: '<div class="alert alert-info" role="alert">',
 		post: '</div>'
@@ -40,29 +41,49 @@ options = {
 		pre: '<div class="alert alert-danger" role="alert">',
 		post: '</div>'
 	}
-	onSuccess: function(response) { },
-	onError: function(response) { },
-	onFail: function(response) { },
+	beforeSubmit: function(element) { },
+	afterSubmit: function(response|jqXHR, element) { },
+	errorPlacement: function(error, element) { },
+	messagePlacement: function(message, element) { },
+	onSuccess: function(response, element) { },
+	onError: function(response, element) { },
+	onFail: function(jqXHR, element) { }
  }
 ```
-#####validatorType :
+#####validatorType:
 Validator that you have used in the form `[null|jQueryValidation|BootstrapValidator]`
 
-#####action :
+#####action:
 URL to which Form has to be submitted
 
-#####type :
+#####type:
 type of request `[GET|POST]`
 
-#####message/error :
-**pre** : Pre HTML that will be prepended before the message/error text `<div class="alert alert-info" role="alert">`
+#####loadingClass:
+Name of Class that will be assigned to form element when the form ajax is processing. Can be used to put a loading indicator in the form.
 
-**post** : Post HTML that will be prepended before the message/error text `</div>`
-#####onSuccess :
+#####message/error:
+**pre**: Pre HTML that will be prepended before the message/error text `<div class="alert alert-info" role="alert">`
+
+**post**: Post HTML that will be prepended before the message/error text `</div>`
+#####beforeSubmit:
+Define the function that will be called before the ajax request is sent. You can assign return value `false` to stop the form to be submitted.
+#####afterSubmit:
+Define the function that will be called after the ajax request completes.
+Arguments of the request will be jqXHR or response and element respectively.
+#####errorPlacement:
+Function that will handle the error placement for the form.
+This function will be executed when the response `status` from server is `error`.
+Arguments of the request will be response and element respectively.
+#####messagePlacement:
+Function that will handle the message placement for the form.
+This function will be executed when the response `status` from server is `success`.
+Arguments of the request will be response and element respectively.
+#####messagePlacement:
 Define the function that will be called on successful submission of form (Server Side: `"status":"success"`).
-#####onError :
+#####onError:
 Define the function that will be called on error in submission of form. (Server Side: `"status":"error"`).
-#####onFail :
+#####onFail:
 Define the function that will be called on server error. (No Response or invalid response from server)
 
 ###Response From Server Side
