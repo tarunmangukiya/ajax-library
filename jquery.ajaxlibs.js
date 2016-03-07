@@ -307,7 +307,7 @@ function log() {
 						 */
 						log("Error in Parsing the server side data as JSON");
 						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
-						that.afterSubmit();
+						that.afterSubmit(data, that.formSubmitting);
 						return false;
 					}
 				}
@@ -348,18 +348,18 @@ function log() {
 
 				// Complete after submitting form tasks
 				that.afterSubmit(jsonData, that.element);
-			}).fail(function(e) {
+			}).fail(function(jqXHR) {
 				/* If Ajax Fails due to some reason,
 				 * The ResponseText or StatusText will be shown as error
 				 */
-				log("ajax fail", e);
-				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
+				log("ajax fail", jqXHR);
+				var message = ($.fn.ajaxLib.debug)?jqXHR.responseText:jqXHR.statusText;
 				that.showCustomError(message);
 
-				if(that.settings.onFail != null) that.settings.onFail(e);
+				if(that.settings.onFail != null) that.settings.onFail(jqXHR, element);
 
 				// Complete after submitting form tasks
-				that.afterSubmit(jsonData, that.element);
+				that.afterSubmit(jqXHR, that.element);
 			});
 			
 
