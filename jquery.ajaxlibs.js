@@ -162,11 +162,7 @@ function log() {
 			error : {
 				pre: '<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>',
 				post: '</div>'
-			},
-			beforeSubmit: null,
-			afterSubmit: null,
-			errorPlacement: null,
-			messagePlacement: null
+			}
 		},
 		submitButtons: 'input[type=submit], button[type=submit]',
 		setDefaults: function( settings ) {
