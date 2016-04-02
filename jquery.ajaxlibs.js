@@ -197,6 +197,7 @@ function log() {
 				}
 			}
 			else if(this.settings.validatorType == "jQueryValidation"){
+				console.log(ele);
 				var validator = $(this.formSubmitting).validate();
 				validator.showErrors(ele);
 			}
@@ -349,15 +350,44 @@ function log() {
 				 * The ResponseText or StatusText will be shown as error
 				 */
 				log("ajax fail", jqXHR);
-				var message = ($.fn.ajaxLib.debug)?jqXHR.responseText:jqXHR.statusText;
-				that.showCustomError(message);
 
-				if(that.settings.onFail != null) that.settings.onFail(jqXHR, element);
+				/* Check if Laravel Request Validation Error */
+				if(jqXHR.status == 422) {
+					/* The error will be parsed as error rather than failed by AjaxForm */
+					
+					var jsonData = jqXHR.responseText;
 
-				// Complete after submitting form tasks
-				that.afterSubmit(jqXHR, that.element);
+					if(typeof jqXHR.responseText === "string"){
+						try{
+							jsonData = JSON.parse(jqXHR.responseText);
+						}
+						catch(err){
+							/* In case of no JSON Server Data the onSuccess method will be called,
+							 * the response will be handled by the method itself
+							 */
+							log("Error in Parsing the server side data as JSON");
+							if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
+							that.afterSubmit(jsonData, that.formSubmitting);
+							return false;
+						}
+					}
+
+					that.showElementErrors(jsonData);
+					if(that.settings.onError != null) that.settings.onError(jsonData, that.element);
+
+					// Complete after submitting form tasks
+					that.afterSubmit(jqXHR, that.element);
+				}
+				else{
+					var message = ($.fn.ajaxLib.debug)?jqXHR.responseText:jqXHR.statusText;
+					that.showCustomError(message);
+
+					if(that.settings.onFail != null) that.settings.onFail(jqXHR, element);
+
+					// Complete after submitting form tasks
+					that.afterSubmit(jqXHR, that.element);
+				}
 			});
-			
 
 			return false;
 		}
@@ -395,6 +425,7 @@ function log() {
 			url: '/',
 			type: 'POST',
 			cache: false,
+			loadingClass: 'ajax-loading',
 			postData: {},
 			completedOnce: false
 		},
@@ -419,11 +450,43 @@ function log() {
 				}
 			}
 		},
-		beforeSubmit: function(){
-			if(that.settings.beforeSubmit != null) that.settings.beforeSubmit(that.element);
+		showCustomMessage: function(str){
+			if(typeof str !== "undefined"){
+				var alert = $.ajaxForm.defaults.message.pre + str.toString() + $.ajaxForm.defaults.message.post;
+				if(typeof this.settings.messagePlacement !== "undefined"){
+					this.settings.messagePlacement(alert, this.element);
+				}
+				else{
+					alert(alert);
+				}
+			}
 		},
-		afterSubmit: function(){
-			if(that.settings.afterSubmit != null) that.settings.afterSubmit(that.element);
+		showCustomError: function(str){
+			if(typeof str !== "undefined"){
+				var alert = $.ajaxForm.defaults.error.pre + str.toString() + $.ajaxForm.defaults.error.post;
+				if(typeof this.settings.errorPlacement !== "undefined"){
+					this.settings.errorPlacement(alert, this.element);
+				}
+				else{
+					alert(alert);
+				}
+			}
+		},
+		beforeSubmit: function(){
+			$beforeSubmit = true;
+			if(typeof that.settings.beforeSubmit !== "undefined"){
+				$beforeSubmit = that.settings.beforeSubmit(this.element);
+				if($beforeSubmit != false)
+					$beforeSubmit = true;
+				else
+					return false;
+			}
+			this.element.addClass(this.settings.loadingClass);
+			return $beforeSubmit;
+		},
+		afterSubmit: function(data, element){
+			this.element.removeClass(this.settings.loadingClass);
+			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.element);
 		},
 		submit: function (e) {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
