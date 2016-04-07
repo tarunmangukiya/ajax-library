@@ -74,7 +74,7 @@ function log() {
 +function ($) {
 	$.extend($.fn, {
 		ajaxLib: {
-			debug: true
+			debug: false
 		},
 		ajaxForm: function (options) {
 			if (!this.length) {
@@ -197,7 +197,6 @@ function log() {
 				}
 			}
 			else if(this.settings.validatorType == "jQueryValidation"){
-				console.log(ele);
 				var validator = $(this.formSubmitting).validate();
 				validator.showErrors(ele);
 			}
@@ -289,8 +288,21 @@ function log() {
 		            return myXhr;
 		        },
 				contentType: false,
-	            processData: false
+	            processData: false,
+	            virtualAjaxForm: that
 			}).done(function (data) {
+				/*
+				 * Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 * that object was getting overrided when two virtualAjaxForm
+				 * requests were getting executed
+				 * We have stored the object of virtualAjaxForm in jqXHR Request
+				 * We will Change that = this.virtualAjaxForm to access that now on
+				 */
+				that = this.virtualAjaxForm;
+				/*
+				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 */
+
 				//If the server responded with data
 				var jsonData = data;
 
@@ -346,9 +358,23 @@ function log() {
 				// Complete after submitting form tasks
 				that.afterSubmit(jsonData, that.element);
 			}).fail(function(jqXHR) {
+				/*
+				 * Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 * that object was getting overrided when two virtualAjaxForm
+				 * requests were getting executed
+				 * We have stored the object of virtualAjaxForm in jqXHR Request
+				 * We will Change that = this.virtualAjaxForm to access that now on
+				 */
+				that = this.virtualAjaxForm;
+				/*
+				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 */
+				 
+
 				/* If Ajax Fails due to some reason,
 				 * The ResponseText or StatusText will be shown as error
 				 */
+
 				log("ajax fail", jqXHR);
 
 				/* Check if Laravel Request Validation Error */
@@ -468,7 +494,7 @@ function log() {
 					this.settings.errorPlacement(alert, this.element);
 				}
 				else{
-					alert(alert);
+					log("Something went wrong!");
 				}
 			}
 		},
@@ -517,10 +543,12 @@ function log() {
 
 			log("Submitting Virtual Ajax Form", that.element);
 
-			console.log(that.settings.postData);
+			//Starting submitting the request, thus disable the submit button 
+			that.beforeSubmit();
+
 			//Create Form Data Object
 			that.data = new FormData();
-
+			
 			// Add all the post Data that's been added using data-post attribute of element
 			var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
 			for (var i = 0; i < allDataNames.length; i++) {
@@ -528,9 +556,7 @@ function log() {
 				var val = that.settings.postData[key];
 				that.data.append(key,val);
 			}
-
-			//Starting submitting the request, thus disable the submit button 
-			that.beforeSubmit();
+			
 			//Create Ajax and submit form
 			$.ajax({
 				url:that.settings.url,
@@ -545,8 +571,21 @@ function log() {
 		            return myXhr;
 		        },
 				contentType: false,
-	            processData: false
+	            processData: false,
+	            virtualAjaxForm: that
 			}).done(function (data) {
+				/*
+				 * Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 * that object was getting overrided when two virtualAjaxForm
+				 * requests were getting executed
+				 * We have stored the object of virtualAjaxForm in jqXHR Request
+				 * We will Change that = this.virtualAjaxForm to access that now on
+				 */
+				that = this.virtualAjaxForm;
+				/*
+				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 */
+				
 				//If the server responded with data
 				jsonData = data;
 
@@ -580,6 +619,8 @@ function log() {
 						$(jsonData.affectedElement).html(jsonData.content);
 					}
 
+					console.log("reached", data, that, this);
+
 					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
 				else if(jsonData.status == "error"){
@@ -587,9 +628,22 @@ function log() {
 				}
 				that.afterSubmit();
 			}).fail(function(e) {
+				/*
+				 * Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 * that object was getting overrided when two virtualAjaxForm
+				 * requests were getting executed
+				 * We have stored the object of virtualAjaxForm in jqXHR Request
+				 * We will Change that = this.virtualAjaxForm to access that now on
+				 */
+				that = this.virtualAjaxForm;
+				/*
+				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
+				 */
+				 
 				/* If Ajax Fails due to some reason,
 				 * The ResponseText or StatusText will be shown as error
 				 */
+				 
 				log("ajax fail", e);
 				var message = ($.fn.ajaxLib.debug)?e.responseText:e.statusText;
 				that.showCustomError(message);
