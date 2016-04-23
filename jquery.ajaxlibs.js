@@ -144,7 +144,7 @@ function log() {
 
 	// AjaxForm Region Start
 	$.ajaxForm = function(options, form){
-		this.formSubmitting = $(form);
+		this.element = $(form);
 		this.settings = $.extend(true, {}, $.ajaxForm.defaults, options);
 		this.init();
 	};
@@ -173,22 +173,22 @@ function log() {
 	$.extend($.ajaxForm.prototype, {
 		init: function () {
 			//Check the validator type and bind the respected submit event
-			this.action = (typeof this.formSubmitting.attr("action") === "undefined")?$.ajaxForm.defaults.action:this.formSubmitting.attr("action");
-			this.type = (typeof this.formSubmitting.attr("method") === "undefined")?$.ajaxForm.defaults.type:this.formSubmitting.attr("method");
+			this.action = (typeof this.element.attr("action") === "undefined")?$.ajaxForm.defaults.action:this.element.attr("action");
+			this.type = (typeof this.element.attr("method") === "undefined")?$.ajaxForm.defaults.type:this.element.attr("method");
 
 			if(this.settings.validatorType == "BootstrapValidator"){
-				this.formSubmitting.on("success.form.bv", this, this.submit);
+				this.element.on("success.form.bv", this, this.submit);
 			}
 			else{
-				this.formSubmitting.on("submit", this, this.submit);
+				this.element.on("submit", this, this.submit);
 			}
 			log("Binded", this);				
 		},
 		showElementErrors: function(ele){
 			if(this.settings.validatorType == "BootstrapValidator"){
 				for (var i = 0; i < ele.length; i++) {
-					var err = $(this.formSubmitting.find('[data-bv-for="' + ele[i].name + '"]')[0]);
-					var erricon = this.formSubmitting.find('[data-bv-icon-for="' + ele[i].name + '"]');
+					var err = $(this.element.find('[data-bv-for="' + ele[i].name + '"]')[0]);
+					var erricon = this.element.find('[data-bv-icon-for="' + ele[i].name + '"]');
 					err.show().parents(".form-group").removeClass("has-success").addClass("has-error");
 					if(typeof erricon!=="undefined") erricon.show().removeClass("glyphicon-ok").addClass("glyphicon-remove");
 					if(typeof ele[i].msg!=="undefined"){
@@ -197,7 +197,7 @@ function log() {
 				}
 			}
 			else if(this.settings.validatorType == "jQueryValidation"){
-				var validator = $(this.formSubmitting).validate();
+				var validator = $(this.element).validate();
 				validator.showErrors(ele);
 			}
 		},
@@ -205,10 +205,10 @@ function log() {
 			if(typeof str !== "undefined"){
 				var alert = $.ajaxForm.defaults.message.pre + str.toString() + $.ajaxForm.defaults.message.post;
 				if(typeof this.settings.messagePlacement !== "undefined"){
-					this.settings.messagePlacement(alert, this.formSubmitting);
+					this.settings.messagePlacement(alert, this.element);
 				}
 				else{
-					this.formSubmitting.prepend(alert);
+					this.element.prepend(alert);
 				}
 			}
 		},
@@ -216,10 +216,10 @@ function log() {
 			if(typeof str !== "undefined"){
 				var alert = $.ajaxForm.defaults.error.pre + str.toString() + $.ajaxForm.defaults.error.post;
 				if(typeof this.settings.errorPlacement !== "undefined"){
-					this.settings.errorPlacement(alert, this.formSubmitting);
+					this.settings.errorPlacement(alert, this.element);
 				}
 				else{
-					this.formSubmitting.prepend(alert);
+					this.element.prepend(alert);
 				}
 			}
 		},
@@ -236,20 +236,20 @@ function log() {
 		beforeSubmit: function(){
 			$beforeSubmit = true;
 			if(typeof that.settings.beforeSubmit !== "undefined"){
-				$beforeSubmit = that.settings.beforeSubmit(this.formSubmitting);
+				$beforeSubmit = that.settings.beforeSubmit(this.element);
 				if($beforeSubmit != false)
 					$beforeSubmit = true;
 				else
 					return false;
 			}
-			this.formSubmitting.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
-			this.formSubmitting.addClass(this.settings.loadingClass);
+			this.element.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
+			this.element.addClass(this.settings.loadingClass);
 			return $beforeSubmit;
 		},
 		afterSubmit: function(data, element){
-			this.formSubmitting.find("input[type=submit], button[type=submit]").removeAttr("disabled");
-			this.formSubmitting.removeClass(this.settings.loadingClass);
-			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.formSubmitting);
+			this.element.find("input[type=submit], button[type=submit]").removeAttr("disabled");
+			this.element.removeClass(this.settings.loadingClass);
+			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.element);
 		},
 		submit: function (e) {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
@@ -258,16 +258,16 @@ function log() {
 			// Check if the validation is valid for jQuery Validator
 			if(that.settings.validatorType == "jQueryValidation"){
 				log("Checking jQueryValidation");
-				var $frm = $(that.formSubmitting);
+				var $frm = $(that.element);
 				if(!$frm.valid()){
 					log("jQueryValidation Not Validated Form");
 					return false;
 				}
 			}
-			log("Submitting Ajax Form", that.formSubmitting);
+			log("Submitting Ajax Form", that.element);
 
 			//Create Form Data Object
-			that.data = new FormData(that.formSubmitting[0]);
+			that.data = new FormData(that.element[0]);
 
 			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
 			$beforeSubmit = that.beforeSubmit();
@@ -289,16 +289,16 @@ function log() {
 		        },
 				contentType: false,
 	            processData: false,
-	            virtualAjaxForm: that
+	            ajaxForm: that
 			}).done(function (data) {
 				/*
 				 * Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
-				 * that object was getting overrided when two virtualAjaxForm
+				 * that object was getting overrided when two ajaxForm
 				 * requests were getting executed
-				 * We have stored the object of virtualAjaxForm in jqXHR Request
-				 * We will Change that = this.virtualAjaxForm to access that now on
+				 * We have stored the object of ajaxForm in jqXHR Request
+				 * We will Change that = this.ajaxForm to access that now on
 				 */
-				that = this.virtualAjaxForm;
+				that = this.ajaxForm;
 				/*
 				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
 				 */
@@ -316,7 +316,7 @@ function log() {
 						 */
 						log("Error in Parsing the server side data as JSON");
 						if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
-						that.afterSubmit(data, that.formSubmitting);
+						that.afterSubmit(data, that.element);
 						return false;
 					}
 				}
@@ -339,7 +339,6 @@ function log() {
 					 * Example : jsonData.message = "This message is from server side"
 					 */
 					that.showCustomMessage(jsonData.message);
-
 					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
 				else if(jsonData.status == "error"){
@@ -365,7 +364,7 @@ function log() {
 				 * We have stored the object of virtualAjaxForm in jqXHR Request
 				 * We will Change that = this.virtualAjaxForm to access that now on
 				 */
-				that = this.virtualAjaxForm;
+				that = this.ajaxForm;
 				/*
 				 * End Bug (a2478c35-a8de-4781-bc6f-0fe67f60554f)
 				 */
@@ -393,7 +392,7 @@ function log() {
 							 */
 							log("Error in Parsing the server side data as JSON");
 							if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(data, that.element);
-							that.afterSubmit(jsonData, that.formSubmitting);
+							that.afterSubmit(jsonData, that.element);
 							return false;
 						}
 					}
@@ -518,6 +517,10 @@ function log() {
 			if(typeof e.preventDefault !== "undefined") e.preventDefault();
 			that = e.data;
 
+			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
+			$beforeSubmit = that.beforeSubmit();
+			if(!$beforeSubmit) return false;
+
 			// Check if cache is allowed & the request is executed once then run the remaining part
 			if(that.settings.cache && that.settings.completedOnce) {
 				log("Virtual Ajax Form Alreay Loaded, executing from cache", that.element);
@@ -542,9 +545,6 @@ function log() {
 			}
 
 			log("Submitting Virtual Ajax Form", that.element);
-
-			//Starting submitting the request, thus disable the submit button 
-			that.beforeSubmit();
 
 			//Create Form Data Object
 			that.data = new FormData();
@@ -591,8 +591,7 @@ function log() {
 
 				if(typeof data === "string"){
 					try{
-						that.response = jsonData = JSON.parse(data);
-						that.settings.completedOnce = true;
+						jsonData = JSON.parse(data);
 					}
 					catch(err){
 						/* In case of no JSON Server Data the onSuccess method will be called,
@@ -604,6 +603,12 @@ function log() {
 						return false;
 					}
 				}
+
+				/*
+				 Save Response in for cache
+				*/
+				that.response = jsonData;
+				that.settings.completedOnce = true;
 			
 				if(jsonData.status == "success"){
 					/* Redirects to the Page if variable is set from server side
@@ -618,8 +623,6 @@ function log() {
 					if(jsonData.updateExtra){
 						$(jsonData.affectedElement).html(jsonData.content);
 					}
-
-					console.log("reached", data, that, this);
 
 					if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
 				}
