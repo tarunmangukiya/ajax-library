@@ -385,6 +385,22 @@ function log() {
 					if(typeof jqXHR.responseText === "string"){
 						try{
 							jsonData = JSON.parse(jqXHR.responseText);
+
+							/* Laravel may return Array Validation Errors, which
+								has to be handled by replacing element.* with element[] */
+							var keys = Object.keys(jsonData);
+							for (var i = keys.length - 1; i >= 0; i--) {
+								var isArray = keys[i].indexOf('.');
+								if(isArray !== -1) {
+									var new_key = keys[i].substring(0, keys[i].indexOf('.'));
+									var tmp_key = keys[i].replace(/_/g,' ');
+									var tmp_new_key = new_key.replace(/_/g,' ');
+									var new_message = jsonData[keys[i]][0].replace(tmp_key, tmp_new_key);
+
+									jsonData[new_key+'[]'] = new_message;
+									delete jsonData[keys[i]];
+								}
+							}
 						}
 						catch(err){
 							/* In case of no JSON Server Data the onSuccess method will be called,
