@@ -103,6 +103,13 @@ function log() {
 				return;
 			}
 
+			if(this.length === 1) {
+				var ajaxfrm = $.data(this[0], "virtualAjaxForm");
+				if (ajaxfrm) {
+					return ajaxfrm;
+				}
+			}
+
 			this.each(function (i, e) {
 				// check if virtualAjaxForm is already applied
 				var ajaxfrm = $.data(e, "virtualAjaxForm");
@@ -135,10 +142,6 @@ function log() {
 			$.data(this[0], "ajaxFileUpload", ajaxfrm);
 			
 			return this;
-		},
-		ajaxSubmit: function (e) {
-			var frm = $.data(this[0], "ajaxForm");
-			frm.submit({data:this});
 		}
 	});
 
@@ -242,8 +245,6 @@ function log() {
 				else
 					return false;
 			}
-			this.element.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
-			this.element.addClass(this.settings.loadingClass);
 			return $beforeSubmit;
 		},
 		afterSubmit: function(data, element){
@@ -251,29 +252,17 @@ function log() {
 			this.element.removeClass(this.settings.loadingClass);
 			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.element);
 		},
-		submit: function (e) {
-			if(typeof e.preventDefault !== "undefined") e.preventDefault();
-			that = e.data;
-			// console.log(that.settings, $.ajaxForm.defaults);
-			// Check if the validation is valid for jQuery Validator
-			if(that.settings.validatorType == "jQueryValidation"){
-				log("Checking jQueryValidation");
-				var $frm = $(that.element);
-				if(!$frm.valid()){
-					log("jQueryValidation Not Validated Form");
-					return false;
-				}
-			}
+		ajaxSubmit: function () {
+			var that = this;
 			log("Submitting Ajax Form", that.element);
 
 			//Create Form Data Object
 			that.data = new FormData(that.element[0]);
 
-			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
-			$beforeSubmit = that.beforeSubmit();
-			if(!$beforeSubmit) return false;
+			// Start Showing Progress of the form
+			this.element.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
+			this.element.addClass(this.settings.loadingClass);
 
-			// Allowed to call a callback
 			//Create Ajax and submit form
 			$.ajax({
 				url:that.action,
@@ -429,6 +418,26 @@ function log() {
 					that.afterSubmit(jqXHR, that.element);
 				}
 			});
+		},
+		submit: function (e) {
+			if(typeof e.preventDefault !== "undefined") e.preventDefault();
+			that = e.data;
+			// console.log(that.settings, $.ajaxForm.defaults);
+			// Check if the validation is valid for jQuery Validator
+			if(that.settings.validatorType == "jQueryValidation"){
+				log("Checking jQueryValidation");
+				var $frm = $(that.element);
+				if(!$frm.valid()){
+					log("jQueryValidation Not Validated Form");
+					return false;
+				}
+			}
+
+			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
+			$beforeSubmit = that.beforeSubmit();
+			if(!$beforeSubmit) return false;
+
+			that.ajaxSubmit();
 
 			return false;
 		}
@@ -522,44 +531,15 @@ function log() {
 				else
 					return false;
 			}
-			this.element.addClass(this.settings.loadingClass);
 			return $beforeSubmit;
 		},
 		afterSubmit: function(data, element){
 			this.element.removeClass(this.settings.loadingClass);
 			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.element);
 		},
-		submit: function (e) {
-			if(typeof e.preventDefault !== "undefined") e.preventDefault();
-			that = e.data;
-
-			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
-			$beforeSubmit = that.beforeSubmit();
-			if(!$beforeSubmit) return false;
-
-			// Check if cache is allowed & the request is executed once then run the remaining part
-			if(that.settings.cache && that.settings.completedOnce) {
-				log("Virtual Ajax Form Alreay Loaded, executing from cache", that.element);
-				jsonData = that.response;
-				/* Redirects to the Page if variable is set from server side
-				 * Example : jsonData.redirect = "http://google.com"
-				 */
-				that.handleRedirect(jsonData.redirect);
-
-				/* Updates a specific part of page
-				 * Example : jsonData.updateExtra = true,
-				 *			affectedElement = ".admin-table tr.active", content = new html data
-				 */
-				if(jsonData.updateExtra){
-					$(jsonData.affectedElement).html(jsonData.content);
-				}
-
-				if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
-				
-				that.afterSubmit();
-				return;
-			}
-
+		ajaxSubmit: function () {
+			//Create Ajax and submit form
+			var that = this;
 			log("Submitting Virtual Ajax Form", that.element);
 
 			//Create Form Data Object
@@ -573,7 +553,9 @@ function log() {
 				that.data.append(key,val);
 			}
 			
-			//Create Ajax and submit form
+			// Start Showing Progress of the form
+			this.element.addClass(this.settings.loadingClass);
+
 			$.ajax({
 				url:that.settings.url,
 				type:that.settings.type,
@@ -670,7 +652,40 @@ function log() {
 				that.afterSubmit();
 				if(that.settings.onFail != null) that.settings.onFail(e);
 			});
+		},
+		submit: function (e) {
+			if(typeof e.preventDefault !== "undefined") e.preventDefault();
+			that = e.data;
 
+			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
+			$beforeSubmit = that.beforeSubmit();
+			if(!$beforeSubmit) return false;
+
+			// Check if cache is allowed & the request is executed once then run the remaining part
+			if(that.settings.cache && that.settings.completedOnce) {
+				log("Virtual Ajax Form Alreay Loaded, executing from cache", that.element);
+				jsonData = that.response;
+				/* Redirects to the Page if variable is set from server side
+				 * Example : jsonData.redirect = "http://google.com"
+				 */
+				that.handleRedirect(jsonData.redirect);
+
+				/* Updates a specific part of page
+				 * Example : jsonData.updateExtra = true,
+				 *			affectedElement = ".admin-table tr.active", content = new html data
+				 */
+				if(jsonData.updateExtra){
+					$(jsonData.affectedElement).html(jsonData.content);
+				}
+
+				if(typeof that.settings.onSuccess !== "undefined") that.settings.onSuccess(jsonData, that.element);
+				
+				that.afterSubmit();
+				return;
+			}
+
+			that.ajaxSubmit();
+			
 			return false;
 		}
 	});
