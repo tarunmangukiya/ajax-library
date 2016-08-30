@@ -179,6 +179,11 @@ function log() {
 			this.action = (typeof this.element.attr("action") === "undefined")?$.ajaxForm.defaults.action:this.element.attr("action");
 			this.type = (typeof this.element.attr("method") === "undefined")?$.ajaxForm.defaults.type:this.element.attr("method");
 
+			// enable input validation if jquery validation is selected
+			if(this.settings.validatorType === "jQueryValidation"){
+				$(this.element).validate();
+			}
+
 			if(this.settings.validatorType == "BootstrapValidator"){
 				this.element.on("success.form.bv", this, this.submit);
 			}
