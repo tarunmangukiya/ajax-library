@@ -181,6 +181,9 @@ function log() {
 
 			// enable input validation if jquery validation is selected
 			if(this.settings.validatorType === "jQueryValidation"){
+				if (!$.validator) {
+					throw new Error('Ajax Library : jQueryValidation Type requires jQuery Validator library.')
+				}
 				$(this.element).validate();
 			}
 
