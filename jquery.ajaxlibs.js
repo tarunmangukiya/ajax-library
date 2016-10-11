@@ -142,6 +142,10 @@ function log() {
 			$.data(this[0], "ajaxFileUpload", ajaxfrm);
 			
 			return this;
+		},
+		ajaxSubmit: function (e) {
+			var frm = $.data(this[0], "ajaxForm");
+			frm.submit({data:this});
 		}
 	});
 
@@ -253,6 +257,8 @@ function log() {
 				else
 					return false;
 			}
+			this.element.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
+			this.element.addClass(this.settings.loadingClass);
 			return $beforeSubmit;
 		},
 		afterSubmit: function(data, element){
@@ -260,17 +266,34 @@ function log() {
 			this.element.removeClass(this.settings.loadingClass);
 			if(typeof this.settings.afterSubmit !== "undefined") that.settings.afterSubmit(data, this.element);
 		},
-		ajaxSubmit: function () {
-			var that = this;
+		submit: function (e) {
+			if(typeof e.preventDefault !== "undefined") e.preventDefault();
+			that = e.data;
+			// console.log(that.settings, $.ajaxForm.defaults);
+			// Check if the validation is valid for jQuery Validator
+			if(that.settings.validatorType == "jQueryValidation"){
+				log("Checking jQueryValidation");
+				var $frm = $(that.element);
+				if(!$frm.valid()){
+					log("jQueryValidation Not Validated Form");
+					return false;
+				}
+			}
 			log("Submitting Ajax Form", that.element);
 
 			//Create Form Data Object
-			that.data = new FormData(that.element[0]);
+			if(that.type.toUpperCase() === 'GET') {
+				that.data = that.element.serialize();
+			}
+			else {
+				that.data = new FormData(that.element[0]);
+			}
 
-			// Start Showing Progress of the form
-			this.element.find($.ajaxForm.submitButtons).attr("disabled", "disabled");
-			this.element.addClass(this.settings.loadingClass);
+			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
+			$beforeSubmit = that.beforeSubmit();
+			if(!$beforeSubmit) return false;
 
+			// Allowed to call a callback
 			//Create Ajax and submit form
 			$.ajax({
 				url:that.action,
@@ -426,26 +449,6 @@ function log() {
 					that.afterSubmit(jqXHR, that.element);
 				}
 			});
-		},
-		submit: function (e) {
-			if(typeof e.preventDefault !== "undefined") e.preventDefault();
-			that = e.data;
-			// console.log(that.settings, $.ajaxForm.defaults);
-			// Check if the validation is valid for jQuery Validator
-			if(that.settings.validatorType == "jQueryValidation"){
-				log("Checking jQueryValidation");
-				var $frm = $(that.element);
-				if(!$frm.valid()){
-					log("jQueryValidation Not Validated Form");
-					return false;
-				}
-			}
-
-			//Starting submitting the request, thus do the tasks that has to be done before submitting the form & check the response is true
-			$beforeSubmit = that.beforeSubmit();
-			if(!$beforeSubmit) return false;
-
-			that.ajaxSubmit();
 
 			return false;
 		}
@@ -539,6 +542,7 @@ function log() {
 				else
 					return false;
 			}
+			this.element.addClass(this.settings.loadingClass);
 			return $beforeSubmit;
 		},
 		afterSubmit: function(data, element){
@@ -548,22 +552,37 @@ function log() {
 		ajaxSubmit: function () {
 			//Create Ajax and submit form
 			var that = this;
+
 			log("Submitting Virtual Ajax Form", that.element);
 
 			//Create Form Data Object
-			that.data = new FormData();
-			
-			// Add all the post Data that's been added using data-post attribute of element
-			var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
-			for (var i = 0; i < allDataNames.length; i++) {
-				var key = allDataNames[i];
-				var val = that.settings.postData[key];
-				that.data.append(key,val);
-			}
-			
-			// Start Showing Progress of the form
-			this.element.addClass(this.settings.loadingClass);
+			if(that.type.toUpperCase() === 'GET') {
+				that.data = that.element.serializeArray();
 
+				// Add all the post Data that's been added using data-post attribute of element
+				var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
+				for (var i = 0; i < allDataNames.length; i++) {
+					var key = allDataNames[i];
+					var val = that.settings.postData[key];
+					that.data.push({
+						name: key,
+						value: val
+					});
+				}
+			}
+			else {
+				that.data = new FormData(that.element[0]);
+
+				// Add all the post Data that's been added using data-post attribute of element
+				var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
+				for (var i = 0; i < allDataNames.length; i++) {
+					var key = allDataNames[i];
+					var val = that.settings.postData[key];
+					that.data.append(key,val);
+				}
+			}
+
+			
 			$.ajax({
 				url:that.settings.url,
 				type:that.settings.type,
