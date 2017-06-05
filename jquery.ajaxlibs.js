@@ -183,14 +183,6 @@ function log() {
 			this.action = (typeof this.element.attr("action") === "undefined")?$.ajaxForm.defaults.action:this.element.attr("action");
 			this.type = (typeof this.element.attr("method") === "undefined")?$.ajaxForm.defaults.type:this.element.attr("method");
 
-			// enable input validation if jquery validation is selected
-			if(this.settings.validatorType === "jQueryValidation"){
-				if (!$.validator) {
-					throw new Error('Ajax Library : jQueryValidation Type requires jQuery Validator library.')
-				}
-				$(this.element).validate();
-			}
-
 			if(this.settings.validatorType == "BootstrapValidator"){
 				this.element.on("success.form.bv", this, this.submit);
 			}
@@ -556,8 +548,9 @@ function log() {
 			log("Submitting Virtual Ajax Form", that.element);
 
 			//Create Form Data Object
-			if(that.type.toUpperCase() === 'GET') {
-				that.data = that.element.serializeArray();
+			if(that.settings.type.toUpperCase() === 'GET') {
+				// that.data = that.element.serializeArray();
+				that.data = [];
 
 				// Add all the post Data that's been added using data-post attribute of element
 				var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
@@ -571,7 +564,8 @@ function log() {
 				}
 			}
 			else {
-				that.data = new FormData(that.element[0]);
+				// that.data = new FormData(that.element[0]);
+				that.data = new FormData();
 
 				// Add all the post Data that's been added using data-post attribute of element
 				var allDataNames = Object.getOwnPropertyNames(that.settings.postData);
